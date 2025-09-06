@@ -37,7 +37,8 @@
 #include <math.h>
 #include "Faces.hpp"
 #include <algorithm>
-
+//TODO: This could be better implemented with an auxiliary array that stores the starting idx for each face
+// idxArray[i] = <idx where face i starts in coordIndex>. I want to test the trivial implementation first and refactor it later.
 Faces::Faces(const int nV, const vector<int>& coordIndex) {
     this->coordIndex = coordIndex; // vector deep copy
     int vertexCount = count_if(this->coordIndex.begin(), this->coordIndex.end(), [](int n){ return n >= 0; });
