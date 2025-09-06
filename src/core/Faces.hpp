@@ -89,7 +89,8 @@ public:
 
 private:
 
-  // TODO
+  int nV;
+  vector<int> coordIndex;
 
 };
 

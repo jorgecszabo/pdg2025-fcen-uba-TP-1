@@ -5,7 +5,7 @@
 //
 // Faces.cpp
 //
-// Written by: <Your Name>
+// Written by: Jorge Szabo
 //
 // Software developed for the course
 // Digital Geometry Processing
@@ -36,48 +36,101 @@
 
 #include <math.h>
 #include "Faces.hpp"
-  
+#include <algorithm>
+
 Faces::Faces(const int nV, const vector<int>& coordIndex) {
-  // TODO
+    this->coordIndex = coordIndex; // vector deep copy
+    int vertexCount = count_if(this->coordIndex.begin(), this->coordIndex.end(), [](int n){ return n >= 0; });
+    this->nV = vertexCount;
 }
 
 int Faces::getNumberOfVertices() const {
-  // TODO
-  return 0;
+    return this->nV;
 }
 
 int Faces::getNumberOfFaces() const {
-  // TODO
-  return 0;
+  return count_if(this->coordIndex.begin(), this->coordIndex.end(), [](int n){ return n < 0; });
 }
 
 int Faces::getNumberOfCorners() const {
-  // TODO
-  return 0;
+    return this->coordIndex.size();
 }
 
 int Faces::getFaceSize(const int iF) const {
-  // TODO
-  return 0;
+    int faceIdx = this->getFaceFirstCorner(iF);
+    if (faceIdx < 0) {
+        return 0;
+    }
+    int vectorSize = this->coordIndex.size();
+    int cornerCount = 0;
+    while(faceIdx < vectorSize && this->coordIndex[faceIdx] >= 0) {
+        ++cornerCount;
+        ++faceIdx;
+    }
+    return cornerCount;
 }
 
 int Faces::getFaceFirstCorner(const int iF) const {
-  // TODO
-  return -1;
+    if (iF < 0) {
+        return -1;
+    }
+    int i, vectorSize;
+    vectorSize = this->coordIndex.size();
+    int indexFace = iF;
+    for (i = 0; i < vectorSize; ++i) {
+        if (indexFace == 0) {
+            break;
+        }
+        if (this->coordIndex[i] < 0) {
+            --indexFace;
+        }
+    }
+    if (i < vectorSize) {
+        return i;
+    } else {
+        return -1;
+    }
 }
 
 int Faces::getFaceVertex(const int iF, const int j) const {
-  // TODO
-  return -1;
+    int faceSize = this->getFaceSize(iF);
+    if (faceSize == 0 || j >= faceSize) {
+        return -1;
+    }
+    int faceIdx = this->getFaceFirstCorner(iF);
+    return this->coordIndex[faceIdx + j];
 }
 
 int Faces::getCornerFace(const int iC) const {
-  // TODO
-  return -1;
+    int vectorSize = this->coordIndex.size();
+    if (iC >= vectorSize) {
+        return -1;
+    }
+    if (this->coordIndex[iC] < 0) {
+        return -1;
+    }
+    int faceIndex = 0;
+    for (size_t i = iC; i >= 0; --i) {
+        if (this->coordIndex[i] < 0) {
+            ++faceIndex;
+        }
+    }
+    return faceIndex;
 }
 
 int Faces::getNextCorner(const int iC) const {
-  // TODO
-  return -1;
+    int vectorSize = this->coordIndex.size();
+    if (iC >= vectorSize) {
+        return -1;
+    }
+    if (this->coordIndex[iC] < 0) {
+        return -1;
+    }
+    int nextCornerIndex = iC;
+    while (this->coordIndex[nextCornerIndex] >= 0) {
+        // this should be slightly faster than nextCornerIndex = (nextCornerIndex + 1) % vectorSize;
+        nextCornerIndex = nextCornerIndex >= vectorSize ? 0 : nextCornerIndex + 1;
+    }
+    return nextCornerIndex + 1;
 }
 
