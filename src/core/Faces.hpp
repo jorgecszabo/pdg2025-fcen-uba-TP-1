@@ -89,8 +89,9 @@ public:
 
 private:
 
-  int nV;
-  vector<int> coordIndex;
+  int _nV;
+  vector<int> _coordIndex;
+  vector<int> _faceStartingIndex;
 
 };
 

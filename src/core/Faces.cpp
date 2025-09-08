@@ -40,98 +40,90 @@
 //TODO: This could be better implemented with an auxiliary array that stores the starting idx for each face
 // idxArray[i] = <idx where face i starts in coordIndex>. I want to test the trivial implementation first and refactor it later.
 Faces::Faces(const int nV, const vector<int>& coordIndex) {
-    this->coordIndex = coordIndex; // vector deep copy
-    int vertexCount = count_if(this->coordIndex.begin(), this->coordIndex.end(), [](int n){ return n >= 0; });
-    this->nV = vertexCount;
+    _coordIndex = coordIndex; // vector deep copy
+    _faceStartingIndex = vector<int>();
+    _nV = nV;
+    _faceStartingIndex.push_back(0);
+    int nextFace = 1;
+    for (size_t i = 0; i < _coordIndex.size() - 1; ++i) {
+        if (_coordIndex[i] < 0) {
+            _faceStartingIndex.push_back(i + 1);
+            _coordIndex[i] = -nextFace;
+            ++nextFace;
+        }
+    }
+    _coordIndex[_coordIndex.size() - 1] = -nextFace;
 }
 
 int Faces::getNumberOfVertices() const {
-    return this->nV;
+    _nV; // TODO: check this value in the constructos
 }
 
 int Faces::getNumberOfFaces() const {
-  return count_if(this->coordIndex.begin(), this->coordIndex.end(), [](int n){ return n < 0; });
+    return _faceStartingIndex.size();
 }
 
 int Faces::getNumberOfCorners() const {
-    return this->coordIndex.size();
+    return _coordIndex.size();
 }
 
 int Faces::getFaceSize(const int iF) const {
-    int faceIdx = this->getFaceFirstCorner(iF);
+    int faceIdx = getFaceFirstCorner(iF);
     if (faceIdx < 0) {
         return 0;
     }
-    int vectorSize = this->coordIndex.size();
-    int cornerCount = 0;
-    while(faceIdx < vectorSize && this->coordIndex[faceIdx] >= 0) {
-        ++cornerCount;
-        ++faceIdx;
+    int count = 0;
+    for(; faceIdx < _coordIndex.size(); ++faceIdx) {
+        if (_coordIndex[faceIdx] < 0) break;
+        ++count;
     }
-    return cornerCount;
+    return count;
 }
 
 int Faces::getFaceFirstCorner(const int iF) const {
-    if (iF < 0) {
+    if (iF < 0 || iF >= _faceStartingIndex.size()) {
         return -1;
     }
-    int i, vectorSize;
-    vectorSize = this->coordIndex.size();
-    int indexFace = iF;
-    for (i = 0; i < vectorSize; ++i) {
-        if (indexFace == 0) {
-            break;
-        }
-        if (this->coordIndex[i] < 0) {
-            --indexFace;
-        }
-    }
-    if (i < vectorSize) {
-        return i;
-    } else {
-        return -1;
-    }
+    return _faceStartingIndex[iF];
 }
 
 int Faces::getFaceVertex(const int iF, const int j) const {
-    int faceSize = this->getFaceSize(iF);
+    int faceSize = getFaceSize(iF);
     if (faceSize == 0 || j >= faceSize) {
         return -1;
     }
-    int faceIdx = this->getFaceFirstCorner(iF);
-    return this->coordIndex[faceIdx + j];
+    int faceIdx = getFaceFirstCorner(iF);
+    return _coordIndex[faceIdx + j];
 }
 
 int Faces::getCornerFace(const int iC) const {
-    int vectorSize = this->coordIndex.size();
+    int vectorSize = _coordIndex.size();
     if (iC >= vectorSize) {
         return -1;
     }
-    if (this->coordIndex[iC] < 0) {
+    if (_coordIndex[iC] < 0) {
         return -1;
     }
-    int faceIndex = 0;
-    for (size_t i = iC; i >= 0; --i) {
-        if (this->coordIndex[i] < 0) {
-            ++faceIndex;
+    for (size_t i = iC; i < _coordIndex.size(); ++i) {
+        if (_coordIndex[i] < 0) {
+            return -_coordIndex[i] - 1;
         }
     }
-    return faceIndex;
 }
 
 int Faces::getNextCorner(const int iC) const {
-    int vectorSize = this->coordIndex.size();
+    int vectorSize = _coordIndex.size();
     if (iC >= vectorSize) {
         return -1;
     }
-    if (this->coordIndex[iC] < 0) {
+    if (_coordIndex[iC] < 0) {
         return -1;
     }
-    int nextCornerIndex = iC;
-    while (this->coordIndex[nextCornerIndex] >= 0) {
-        // this should be slightly faster than nextCornerIndex = (nextCornerIndex + 1) % vectorSize;
-        nextCornerIndex = nextCornerIndex >= vectorSize ? 0 : nextCornerIndex + 1;
+    int nextCoordValue = _coordIndex[iC + 1];
+    if (nextCoordValue < 0) {
+        return _faceStartingIndex[-nextCoordValue - 1];
+    } else {
+        return iC + 1;
     }
-    return nextCornerIndex + 1;
 }
 
