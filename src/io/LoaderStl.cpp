@@ -43,6 +43,7 @@
 #include "wrl/Appearance.hpp"
 #include "wrl/Material.hpp"
 #include "wrl/IndexedFaceSet.hpp"
+#include <iostream> // TODO: deleteme
 
 // reference
 // https://en.wikipedia.org/wiki/STL_(file_format)
@@ -64,14 +65,78 @@ bool LoaderStl::load(const char* filename, SceneGraph& wrl) {
     fp = fopen(filename,"r");
     if(fp==(FILE*)0) throw new StrException("fp==(FILE*)0");
 
+    wrl.setUrl(filename);
+
     // use the io/Tokenizer class to parse the input ascii file
 
     TokenizerFile tkn(fp);
     // first token should be "solid"
     if(tkn.expecting("solid") && tkn.get()) {
-      string stlName = tkn; // second token should be the solid name
+        string stlName = tkn; // second token should be the solid name
 
-      // TODO ...
+        Shape* shape = new Shape();
+        wrl.addChild(shape);
+
+        Appearance* appearance = new Appearance();
+        shape->setAppearance(appearance);
+
+        Material* material = new Material();
+        appearance->setMaterial(material);
+
+        IndexedFaceSet* geometry = new IndexedFaceSet();
+        shape->setGeometry(geometry);
+
+        vector<float>& normal = geometry->getNormal();
+        vector<int>& coordIndex = geometry->getCoordIndex();
+        vector<float>& coord = geometry->getCoord();
+        float floatBuffer;
+        Vec3f vec3fBuffer;
+        uint facetNumber = 0;
+        // This code is terrible >:(
+        for (;;) {
+            if(!(tkn.expecting("facet") && tkn.expecting("normal"))) {
+                if (facetNumber > 0) {
+                    break; // We parsed at least one face
+                } else {
+                    throw StrException("Invalid stl file, expecting facet normal");
+                }
+            }
+
+            bool success = tkn.getVec3f(vec3fBuffer);
+            if (!success) {
+                throw StrException("Invalid stl file, failed to read float value");
+            }
+
+            // One normal per vertex (Can I save memory by not repeating this information)
+            for (int i = 0; i < 3; ++i) {
+                normal.push_back(vec3fBuffer.x);
+                normal.push_back(vec3fBuffer.y);
+                normal.push_back(vec3fBuffer.z);
+            }
+
+            if(!(tkn.expecting("outer") && tkn.expecting("loop"))) {
+                throw StrException("Invalid stl file, expecting outer loop");
+            }
+
+            for (int i = 0; i < 3; ++i) {
+                if (!tkn.expecting("vertex")) {
+                    throw StrException("Invalid stl file, expecting vertex");
+                }
+                for (int j = 0; j < 3; ++j) {
+                    bool success = tkn.getFloat(floatBuffer);
+                    if (!success) {
+                        throw StrException("Invalid stl file, failed to read float value");
+                    }
+                    coord.push_back(floatBuffer);
+                }
+                coordIndex.push_back(3 * facetNumber + i); // The coords for each facet are <v1 v2 v3> counterclockwise
+            }
+            coordIndex.push_back(-1);
+            tkn.expecting("endloop");
+            tkn.expecting("endfacet");
+            ++facetNumber;
+        }
+        success = true;
 
       // create the scene graph structure :
       // 1) the SceneGraph should have a single Shape node a child
