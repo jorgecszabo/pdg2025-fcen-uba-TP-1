@@ -5,7 +5,7 @@
 //
 // LoaderStl.cpp
 //
-// Written by: <Your Name>
+// Written by: Jorge Szabo
 //
 // Software developed for the course
 // Digital Geometry Processing
