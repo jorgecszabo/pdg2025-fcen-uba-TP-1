@@ -5,7 +5,7 @@
 //
 // LoaderStl.hpp
 //
-// Written by: <Your Name>
+// Written by: Jorge Szabo
 //
 // Software developed for the course
 // Digital Geometry Processing
@@ -47,6 +47,7 @@ class LoaderStl : public Loader {
 private:
 
   const static char* _ext;
+  bool parseFace(Tokenizer &tkn, vector<float> &normal, vector<int> &coordIndex, vector<float> &coord, uint facetNumber);
 
 public:
 
